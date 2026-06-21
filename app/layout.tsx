@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Nav from "@/components/Nav";
+import Bruno from "@/components/Bruno";
 
 export const metadata: Metadata = {
   title: "Gestionale Forniture - Errea & Solo",
@@ -20,6 +21,7 @@ export default function RootLayout({
         <main className="flex-1 w-full max-w-6xl mx-auto px-4 py-6">
           {children}
         </main>
+        <Bruno />
       </body>
     </html>
   );
