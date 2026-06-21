@@ -180,7 +180,11 @@ export default async function ClienteDetailPage({
                 );
                 return (
                   <tr key={ragazzo.id}>
-                    <td className="py-2 font-medium">{ragazzo.nome}</td>
+                    <td className="py-2 font-medium">
+                      <Link href={`/ragazzi/${ragazzo.id}`} className="hover:underline">
+                        {ragazzo.nome}
+                      </Link>
+                    </td>
                     <td className="py-2 text-slate-500">
                       {[ragazzo.email, ragazzo.cellulare].filter(Boolean).join(" · ") || "-"}
                     </td>

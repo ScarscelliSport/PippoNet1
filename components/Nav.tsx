@@ -27,6 +27,12 @@ export default function Nav() {
               {link.label}
             </Link>
           ))}
+          <Link
+            href="/report"
+            className="px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-500 transition font-medium"
+          >
+            Report
+          </Link>
           <a
             href="/api/export"
             className="px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 transition font-medium"

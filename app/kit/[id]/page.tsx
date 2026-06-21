@@ -181,7 +181,11 @@ export default async function KitDetailPage({
               <tbody className="divide-y divide-slate-100">
                 {kit.atleti.map((atleta) => (
                   <tr key={atleta.id}>
-                    <td className="py-2">{atleta.ragazzo.nome}</td>
+                    <td className="py-2">
+                      <Link href={`/ragazzi/${atleta.ragazzoId}`} className="hover:underline">
+                        {atleta.ragazzo.nome}
+                      </Link>
+                    </td>
                     <td className="py-2 text-slate-500">{atleta.ragazzo.email || "-"}</td>
                     <td className="py-2 text-slate-500">{atleta.ragazzo.cellulare || "-"}</td>
                     <td className="py-2">

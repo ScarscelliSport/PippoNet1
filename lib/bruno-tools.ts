@@ -17,7 +17,7 @@ export const brunoToolDefinitions = [
   {
     name: "cerca_nel_programma",
     description:
-      "Cerca clienti, ordini, lavorazioni e documenti nel gestionale in base a una parola chiave (nome cliente, numero ordine, descrizione, fornitore, ecc.). Usa questo strumento quando l'utente chiede di trovare qualcosa ma non conosci già l'id esatto.",
+      "Cerca clienti, ordini, lavorazioni, documenti e ragazzi (atleti) nel gestionale in base a una parola chiave (nome cliente, numero ordine, descrizione, fornitore, nome ragazzo, ecc.). Usa questo strumento quando l'utente chiede di trovare qualcosa ma non conosci già l'id esatto. Se l'utente cerca un ragazzo, usa l'id restituito qui con dettagli_ragazzo per recuperare tutti i suoi ordini e il relativo stato.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -66,6 +66,18 @@ export const brunoToolDefinitions = [
     },
   },
   {
+    name: "dettagli_ragazzo",
+    description:
+      "Recupera l'anagrafica completa di un ragazzo/atleta (società sportiva, contatti) e tutti i suoi kit e ordini personali con relativo stato di pagamento e consegna, dato il suo id. Usa questo strumento quando l'utente chiede informazioni su un ragazzo, cosa ha ordinato o a che punto è il suo ordine.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        ragazzoId: { type: "string", description: "Id del ragazzo" },
+      },
+      required: ["ragazzoId"],
+    },
+  },
+  {
     name: "statistiche_generali",
     description:
       "Restituisce le statistiche generali del gestionale: totale da incassare, incassato questo mese, numero di ordini aperti, consegne in ritardo, fatturato per brand (Errea/Solo). Usa questo strumento per domande generali su andamento, incassi, fatturato o ritardi.",
@@ -100,6 +112,11 @@ export async function eseguiBrunoTool(name: string, input: Record<string, unknow
           id: d.id,
           nome: d.nome,
           tipo: TIPO_DOCUMENTO_LABELS[d.tipo],
+        })),
+        ragazzi: results.ragazzi.map((r) => ({
+          id: r.id,
+          nome: r.nome,
+          cliente: r.cliente.nome,
         })),
       };
     }
@@ -179,6 +196,47 @@ export async function eseguiBrunoTool(name: string, input: Record<string, unknow
           data: formatData(p.data),
           metodo: p.metodo,
         })),
+      };
+    }
+
+    case "dettagli_ragazzo": {
+      const ragazzoId = String(input.ragazzoId ?? "");
+      const ragazzo = await prisma.ragazzo.findUnique({
+        where: { id: ragazzoId },
+        include: {
+          cliente: true,
+          partecipazioni: { include: { kit: true } },
+          ordini: { include: { pagamenti: true, lavorazioni: true } },
+        },
+      });
+      if (!ragazzo) return { errore: "Ragazzo non trovato" };
+      return {
+        nome: ragazzo.nome,
+        societa: ragazzo.cliente.nome,
+        email: ragazzo.email,
+        cellulare: ragazzo.cellulare,
+        kit: ragazzo.partecipazioni.map((p) => ({
+          nome: p.kit.nome,
+          brand: BRAND_LABELS[p.kit.brand],
+          stato: KIT_STATO_LABELS[p.kit.stato],
+        })),
+        ordini: ragazzo.ordini.map((o) => {
+          const pagato = o.pagamenti.reduce((s, p) => s + p.importo, 0);
+          return {
+            id: o.id,
+            descrizione: o.descrizione,
+            importoTotale: formatEuro(o.importoTotale),
+            residuo: formatEuro(Math.max(o.importoTotale - pagato, 0)),
+            statoPagamento: STATO_PAGAMENTO_LABELS[statoPagamentoOrdine(o.importoTotale, pagato)],
+            statoConsegna: STATO_CONSEGNA_LABELS[o.statoConsegna],
+            dataOrdine: formatData(o.dataOrdine),
+            lavorazioni: o.lavorazioni.map((l) => ({
+              descrizione: l.descrizione,
+              stato: STATO_LAVORAZIONE_LABELS[l.stato],
+              costo: formatEuro(l.costo),
+            })),
+          };
+        }),
       };
     }
 

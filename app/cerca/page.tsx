@@ -16,12 +16,13 @@ export default async function CercaPage({
   const results =
     query.length >= 2
       ? await searchAll(query, 50)
-      : { clienti: [], ordini: [], lavorazioni: [], documenti: [] };
+      : { clienti: [], ordini: [], lavorazioni: [], documenti: [], ragazzi: [] };
   const totale =
     results.clienti.length +
     results.ordini.length +
     results.lavorazioni.length +
-    results.documenti.length;
+    results.documenti.length +
+    results.ragazzi.length;
 
   return (
     <div className="space-y-6">
@@ -117,6 +118,26 @@ export default async function CercaPage({
                 <span className="text-slate-400">
                   {" "}
                   · {TIPO_DOCUMENTO_LABELS[d.tipo]} · {d.cliente.nome}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      {results.ragazzi.length > 0 && (
+        <Card title={`Ragazzi (${results.ragazzi.length})`}>
+          <ul className="divide-y divide-slate-100 text-sm">
+            {results.ragazzi.map((r) => (
+              <li key={r.id} className="py-2">
+                <Link href={`/ragazzi/${r.id}`} className="font-medium hover:underline">
+                  {r.nome}
+                </Link>
+                <span className="text-slate-400">
+                  {" "}
+                  · {r.cliente.nome}
+                  {r.email && ` · ${r.email}`}
+                  {r.cellulare && ` · ${r.cellulare}`}
                 </span>
               </li>
             ))}

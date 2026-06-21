@@ -3,10 +3,10 @@ import { prisma } from "@/lib/prisma";
 export async function searchAll(q: string, limit = 5) {
   const query = q.trim();
   if (query.length < 2) {
-    return { clienti: [], ordini: [], lavorazioni: [], documenti: [] };
+    return { clienti: [], ordini: [], lavorazioni: [], documenti: [], ragazzi: [] };
   }
 
-  const [clienti, ordini, lavorazioni, documenti] = await Promise.all([
+  const [clienti, ordini, lavorazioni, documenti, ragazzi] = await Promise.all([
     prisma.cliente.findMany({
       where: {
         OR: [
@@ -49,9 +49,21 @@ export async function searchAll(q: string, limit = 5) {
       orderBy: { createdAt: "desc" },
       take: limit,
     }),
+    prisma.ragazzo.findMany({
+      where: {
+        OR: [
+          { nome: { contains: query } },
+          { email: { contains: query } },
+          { cellulare: { contains: query } },
+        ],
+      },
+      include: { cliente: true },
+      orderBy: { nome: "asc" },
+      take: limit,
+    }),
   ]);
 
-  return { clienti, ordini, lavorazioni, documenti };
+  return { clienti, ordini, lavorazioni, documenti, ragazzi };
 }
 
 export type SearchResults = Awaited<ReturnType<typeof searchAll>>;

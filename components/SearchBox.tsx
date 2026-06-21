@@ -14,9 +14,10 @@ type Results = {
     ordine: { cliente: { nome: string } };
   }[];
   documenti: { id: string; nome: string; clienteId: string; ordineId: string | null }[];
+  ragazzi: { id: string; nome: string; cliente: { nome: string } }[];
 };
 
-const EMPTY: Results = { clienti: [], ordini: [], lavorazioni: [], documenti: [] };
+const EMPTY: Results = { clienti: [], ordini: [], lavorazioni: [], documenti: [], ragazzi: [] };
 
 export default function SearchBox() {
   const [query, setQuery] = useState("");
@@ -58,7 +59,8 @@ export default function SearchBox() {
     results.clienti.length +
     results.ordini.length +
     results.lavorazioni.length +
-    results.documenti.length;
+    results.documenti.length +
+    results.ragazzi.length;
 
   function vediTutti() {
     setOpen(false);
@@ -146,7 +148,7 @@ export default function SearchBox() {
                 </div>
               )}
               {results.documenti.length > 0 && (
-                <div>
+                <div className="border-b border-slate-100">
                   <p className="px-3 pt-2 text-xs font-semibold text-slate-400 uppercase">
                     Documenti
                   </p>
@@ -158,6 +160,24 @@ export default function SearchBox() {
                       onClick={() => setOpen(false)}
                     >
                       {d.nome}
+                    </Link>
+                  ))}
+                </div>
+              )}
+              {results.ragazzi.length > 0 && (
+                <div>
+                  <p className="px-3 pt-2 text-xs font-semibold text-slate-400 uppercase">
+                    Ragazzi
+                  </p>
+                  {results.ragazzi.map((r) => (
+                    <Link
+                      key={r.id}
+                      href={`/ragazzi/${r.id}`}
+                      className="block px-3 py-2 text-sm hover:bg-slate-50"
+                      onClick={() => setOpen(false)}
+                    >
+                      <span className="font-medium">{r.nome}</span>
+                      <span className="text-slate-400"> · {r.cliente.nome}</span>
                     </Link>
                   ))}
                 </div>
