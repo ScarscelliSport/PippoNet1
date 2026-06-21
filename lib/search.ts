@@ -55,3 +55,26 @@ export async function searchAll(q: string, limit = 5) {
 }
 
 export type SearchResults = Awaited<ReturnType<typeof searchAll>>;
+
+// Ricerca dedicata ai Kit, tenuta separata da searchAll: i Kit hanno un
+// proprio flusso (campionario, taglie, ragazzi) e non vanno mescolati con i
+// risultati della ricerca generale clienti/ordini/lavorazioni/documenti.
+export async function searchKit(q: string, limit = 5) {
+  const query = q.trim();
+  if (query.length < 2) return [];
+
+  return prisma.kit.findMany({
+    where: {
+      OR: [
+        { nome: { contains: query } },
+        { cliente: { nome: { contains: query } } },
+        { atleti: { some: { nome: { contains: query } } } },
+      ],
+    },
+    include: { cliente: true, atleti: true },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
+}
+
+export type KitSearchResults = Awaited<ReturnType<typeof searchKit>>;

@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { searchAll } from "@/lib/search";
+import { searchAll, searchKit } from "@/lib/search";
 import {
   BRAND_LABELS,
+  KIT_STATO_LABELS,
   STATO_CONSEGNA_LABELS,
   STATO_LAVORAZIONE_LABELS,
   TIPO_DOCUMENTO_LABELS,
@@ -21,6 +22,21 @@ export const brunoToolDefinitions = [
       type: "object" as const,
       properties: {
         query: { type: "string", description: "Parola chiave da cercare" },
+      },
+      required: ["query"],
+    },
+  },
+  {
+    name: "cerca_kit",
+    description:
+      "Cerca tra i Kit: i campionari di prodotti scelti dalle società sportive per fascia età, con i ragazzi, le taglie assegnate e lo stato di avanzamento (scelta prodotti, prove, ordinato, in lavorazione, da contattare, contattato, chiuso). È una ricerca separata da cerca_nel_programma: usa questo strumento solo quando l'utente chiede esplicitamente di un Kit, di un campionario, di taglie o di un ragazzo legato a un Kit. Se l'utente parla di Kit in modo generico senza indicare un nome, chiedi prima quale kit, ragazzo o società sportiva cercare invece di chiamare lo strumento.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        query: {
+          type: "string",
+          description: "Nome del kit, della società sportiva o del ragazzo da cercare",
+        },
       },
       required: ["query"],
     },
@@ -84,6 +100,21 @@ export async function eseguiBrunoTool(name: string, input: Record<string, unknow
           id: d.id,
           nome: d.nome,
           tipo: TIPO_DOCUMENTO_LABELS[d.tipo],
+        })),
+      };
+    }
+
+    case "cerca_kit": {
+      const query = String(input.query ?? "");
+      const kit = await searchKit(query, 8);
+      return {
+        kit: kit.map((k) => ({
+          id: k.id,
+          nome: k.nome,
+          cliente: k.cliente.nome,
+          brand: BRAND_LABELS[k.brand],
+          stato: KIT_STATO_LABELS[k.stato],
+          numeroRagazzi: k.atleti.length,
         })),
       };
     }

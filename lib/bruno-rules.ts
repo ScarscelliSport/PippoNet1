@@ -4,6 +4,9 @@ const AIUTO = /(aiuto|help|cosa puoi fare|cosa sai fare)/i;
 const SALUTI = /^(ciao|salve|buongiorno|buonasera|hey|ehi)\b/i;
 const STATISTICHE_KEYWORDS =
   /(incassare|incassato|fatturat|statistich|andamento|margine|ritardo|ritardi|riepilogo)/i;
+const KIT_KEYWORDS = /(\bkit\b|campionari|taglia|taglie|fascia\s*et)/i;
+const KIT_PAROLE_GENERICHE =
+  /\b(kit|campionario|campionari|taglia|taglie|cerca|cercami|trova|trovami|aiuto|per)\b/gi;
 
 type StatisticheGenerali = {
   daIncassare: string;
@@ -21,6 +24,17 @@ type RisultatiRicerca = {
   documenti: { id: string; nome: string; tipo: string }[];
 };
 
+type RisultatiKit = {
+  kit: {
+    id: string;
+    nome: string;
+    cliente: string;
+    brand: string;
+    stato: string;
+    numeroRagazzi: number;
+  }[];
+};
+
 export async function rispostaSenzaAI(testo: string): Promise<string> {
   const msg = testo.trim();
 
@@ -28,6 +42,7 @@ export async function rispostaSenzaAI(testo: string): Promise<string> {
     return [
       "Posso aiutarti così, anche senza AI avanzata:",
       "- Scrivimi il nome di un cliente, un numero ordine o una parola chiave: cerco per te tra clienti, ordini, lavorazioni e documenti.",
+      '- Scrivimi "kit" oppure il nome di un Kit, di un ragazzo o di una società sportiva: cerco solo tra i Kit, separatamente dalla ricerca generale.',
       '- Chiedimi "statistiche", "fatturato" o "quanto devo incassare" per un riepilogo generale.',
       "- Per risposte più intelligenti e conversazionali, aggiungi una ANTHROPIC_API_KEY nel file .env.",
     ].join("\n");
@@ -35,6 +50,27 @@ export async function rispostaSenzaAI(testo: string): Promise<string> {
 
   if (SALUTI.test(msg) && msg.length < 20) {
     return "Ciao! Sono BRUNO. Scrivimi il nome di un cliente, un numero ordine, oppure chiedimi le statistiche generali.";
+  }
+
+  if (KIT_KEYWORDS.test(msg)) {
+    const termine = msg.replace(KIT_PAROLE_GENERICHE, "").trim();
+
+    if (termine.length < 2) {
+      return "Vuoi che cerchi tra i Kit? Scrivimi il nome del kit, della società sportiva o del ragazzo (è una ricerca separata da quella generale).";
+    }
+
+    const r = (await eseguiBrunoTool("cerca_kit", { query: termine })) as RisultatiKit;
+    if (r.kit.length === 0) {
+      return `Non ho trovato nessun Kit per "${termine}". Prova con un altro nome, oppure apri la pagina "Gestione kit" nel gestionale.`;
+    }
+
+    const righe = ["Kit trovati:"];
+    r.kit.forEach((k) =>
+      righe.push(
+        `- ${k.nome} · ${k.cliente} · ${k.brand} · stato: ${k.stato} (${k.numeroRagazzi} ragazzi)`
+      )
+    );
+    return righe.join("\n");
   }
 
   if (STATISTICHE_KEYWORDS.test(msg)) {
