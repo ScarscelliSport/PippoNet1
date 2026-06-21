@@ -196,7 +196,7 @@ export default async function DashboardPage() {
                   <th className="py-2 font-medium">Cliente</th>
                   <th className="py-2 font-medium">Data ordine</th>
                   <th className="py-2 font-medium text-right">Importo</th>
-                  <th className="py-2 font-medium text-right">Residuo</th>
+                  <th className="py-2 pr-4 font-medium text-right">Residuo</th>
                   <th className="py-2 font-medium">Stato</th>
                 </tr>
               </thead>
@@ -213,7 +213,7 @@ export default async function DashboardPage() {
                       </td>
                       <td className="py-2">{formatData(ordine.dataOrdine)}</td>
                       <td className="py-2 text-right">{formatEuro(ordine.importoTotale)}</td>
-                      <td className="py-2 text-right text-red-600 font-medium">
+                      <td className="py-2 pr-4 text-right text-red-600 font-medium">
                         {formatEuro(residuo)}
                       </td>
                       <td className="py-2">

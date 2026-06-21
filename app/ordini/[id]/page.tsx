@@ -189,7 +189,7 @@ export default async function OrdineDetailPage({
                   <th className="py-2 font-medium">Tipo</th>
                   <th className="py-2 font-medium">Descrizione</th>
                   <th className="py-2 font-medium">Fornitore</th>
-                  <th className="py-2 font-medium text-right">Costo</th>
+                  <th className="py-2 pr-4 font-medium text-right">Costo</th>
                   <th className="py-2 font-medium">Stato</th>
                   <th className="py-2 font-medium"></th>
                 </tr>
@@ -200,7 +200,7 @@ export default async function OrdineDetailPage({
                     <td className="py-2">{TIPO_LAVORAZIONE_LABELS[lavorazione.tipo]}</td>
                     <td className="py-2 text-slate-500">{lavorazione.descrizione || "-"}</td>
                     <td className="py-2 text-slate-500">{lavorazione.fornitore || "-"}</td>
-                    <td className="py-2 text-right">{formatEuro(lavorazione.costo)}</td>
+                    <td className="py-2 pr-4 text-right">{formatEuro(lavorazione.costo)}</td>
                     <td className="py-2">
                       <AutoSubmitSelect
                         action={updateStatoLavorazione.bind(null, lavorazione.id, ordine.id)}

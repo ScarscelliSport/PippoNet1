@@ -100,7 +100,7 @@ export default async function ClienteDetailPage({
                 <th className="py-2 font-medium">Data</th>
                 <th className="py-2 font-medium">Brand</th>
                 <th className="py-2 font-medium">Tipo</th>
-                <th className="py-2 font-medium text-right">Importo</th>
+                <th className="py-2 pr-4 font-medium text-right">Importo</th>
                 <th className="py-2 font-medium">Pagamento</th>
                 <th className="py-2 font-medium">Consegna</th>
               </tr>
@@ -121,7 +121,7 @@ export default async function ClienteDetailPage({
                     </td>
                     <td className="py-2">{BRAND_LABELS[ordine.brand]}</td>
                     <td className="py-2">{TIPO_ORDINE_LABELS[ordine.tipo]}</td>
-                    <td className="py-2 text-right">{formatEuro(ordine.importoTotale)}</td>
+                    <td className="py-2 pr-4 text-right">{formatEuro(ordine.importoTotale)}</td>
                     <td className="py-2">
                       <Badge
                         label={STATO_PAGAMENTO_LABELS[statoPag]}
