@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { brunoToolDefinitions, eseguiBrunoTool } from "@/lib/bruno-tools";
+import { rispostaSenzaAI } from "@/lib/bruno-rules";
 
 const SYSTEM_PROMPT = `Sei BRUNO, l'assistente AI integrato nel gestionale forniture sportive Errea/Solo.
 Aiuti l'utente a trovare informazioni su clienti, ordini, lavorazioni, pagamenti e documenti usando gli strumenti a disposizione.
@@ -10,17 +11,16 @@ Quando ha senso, indica all'utente che può aprire la pagina corrispondente nel 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return Response.json(
-      { error: "not_configured" },
-      { status: 503 }
-    );
-  }
-
   const { messages } = (await req.json()) as { messages: ChatMessage[] };
   if (!Array.isArray(messages) || messages.length === 0) {
     return Response.json({ error: "invalid_request" }, { status: 400 });
+  }
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    const ultimoMessaggio = messages[messages.length - 1]?.content ?? "";
+    const reply = await rispostaSenzaAI(ultimoMessaggio);
+    return Response.json({ reply, mode: "no-ai" });
   }
 
   const client = new Anthropic({ apiKey });
@@ -73,5 +73,8 @@ export async function POST(req: NextRequest) {
     conversation.push({ role: "user", content: toolResults });
   }
 
-  return Response.json({ reply: finalText || "Non sono riuscito a generare una risposta." });
+  return Response.json({
+    reply: finalText || "Non sono riuscito a generare una risposta.",
+    mode: "ai",
+  });
 }
