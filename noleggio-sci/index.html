@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏂 PippoNet Rental — Noleggio Sci</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-icon">🏔️</span>
+    <div>
+      <h1>PippoNet Rental</h1>
+      <p class="tagline">Noleggio sci &amp; freestyle gear</p>
+    </div>
+  </div>
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+    <button class="tab-btn" data-tab="attrezzatura">Attrezzatura</button>
+    <button class="tab-btn" data-tab="clienti">Clienti</button>
+    <button class="tab-btn" data-tab="noleggi">Noleggi</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- DASHBOARD -->
+  <section id="dashboard" class="tab-panel active">
+    <div class="stats-grid">
+      <div class="stat-card stat-snow">
+        <span class="stat-icon">⛷️</span>
+        <div>
+          <p class="stat-value" id="stat-active-rentals">0</p>
+          <p class="stat-label">Noleggi attivi</p>
+        </div>
+      </div>
+      <div class="stat-card stat-sun">
+        <span class="stat-icon">🎿</span>
+        <div>
+          <p class="stat-value" id="stat-available">0</p>
+          <p class="stat-label">Pezzi disponibili</p>
+        </div>
+      </div>
+      <div class="stat-card stat-fire">
+        <span class="stat-icon">💰</span>
+        <div>
+          <p class="stat-value" id="stat-revenue">€0</p>
+          <p class="stat-label">Ricavi totali</p>
+        </div>
+      </div>
+      <div class="stat-card stat-ice">
+        <span class="stat-icon">👥</span>
+        <div>
+          <p class="stat-value" id="stat-customers">0</p>
+          <p class="stat-label">Clienti registrati</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title">🔥 Noleggi attivi in pista</h2>
+    <div class="table-wrap">
+      <table id="active-rentals-table">
+        <thead>
+          <tr><th>Cliente</th><th>Attrezzatura</th><th>Qtà</th><th>Dal</th><th>Al</th><th>Prezzo</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ATTREZZATURA -->
+  <section id="attrezzatura" class="tab-panel">
+    <h2 class="section-title">🎿 Attrezzatura</h2>
+    <form id="equipment-form" class="card-form">
+      <input type="hidden" id="equipment-id">
+      <select id="equipment-category" required>
+        <option value="">Categoria</option>
+        <option value="Sci">Sci</option>
+        <option value="Snowboard">Snowboard</option>
+        <option value="Scarponi">Scarponi</option>
+        <option value="Casco">Casco</option>
+        <option value="Racchette">Racchette</option>
+        <option value="Tavola Freestyle">Tavola Freestyle</option>
+      </select>
+      <input type="text" id="equipment-name" placeholder="Nome / modello" required>
+      <input type="text" id="equipment-size" placeholder="Taglia / misura">
+      <input type="number" id="equipment-qty" placeholder="Quantità totale" min="1" required>
+      <button type="submit" class="btn btn-primary">Aggiungi</button>
+      <button type="button" id="equipment-cancel" class="btn btn-ghost" style="display:none">Annulla</button>
+    </form>
+    <div class="table-wrap">
+      <table id="equipment-table">
+        <thead>
+          <tr><th>Categoria</th><th>Nome</th><th>Taglia</th><th>Totale</th><th>Disponibili</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- CLIENTI -->
+  <section id="clienti" class="tab-panel">
+    <h2 class="section-title">👥 Clienti</h2>
+    <form id="customer-form" class="card-form">
+      <input type="hidden" id="customer-id">
+      <input type="text" id="customer-name" placeholder="Nome e cognome" required>
+      <input type="tel" id="customer-phone" placeholder="Telefono">
+      <input type="text" id="customer-doc" placeholder="Documento (n°)">
+      <button type="submit" class="btn btn-primary">Aggiungi</button>
+      <button type="button" id="customer-cancel" class="btn btn-ghost" style="display:none">Annulla</button>
+    </form>
+    <div class="table-wrap">
+      <table id="customer-table">
+        <thead>
+          <tr><th>Nome</th><th>Telefono</th><th>Documento</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- NOLEGGI -->
+  <section id="noleggi" class="tab-panel">
+    <h2 class="section-title">🏂 Nuovo Noleggio</h2>
+    <form id="rental-form" class="card-form">
+      <input type="hidden" id="rental-id">
+      <select id="rental-customer" required>
+        <option value="">Cliente</option>
+      </select>
+      <select id="rental-equipment" required>
+        <option value="">Attrezzatura</option>
+      </select>
+      <input type="number" id="rental-qty" placeholder="Qtà" min="1" value="1" required>
+      <input type="date" id="rental-start" required>
+      <input type="date" id="rental-end" required>
+      <input type="number" id="rental-price" placeholder="Prezzo €" min="0" step="0.5" required>
+      <button type="submit" class="btn btn-primary">Crea noleggio</button>
+    </form>
+
+    <h2 class="section-title">📋 Tutti i noleggi</h2>
+    <div class="table-wrap">
+      <table id="rental-table">
+        <thead>
+          <tr><th>Cliente</th><th>Attrezzatura</th><th>Qtà</th><th>Dal</th><th>Al</th><th>Prezzo</th><th>Stato</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <span>❄️ Dati salvati solo su questo dispositivo (locale, offline) ❄️</span>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
