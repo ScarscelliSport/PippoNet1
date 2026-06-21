@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Brand {
+  ERREA
+  SOLO
+}
+
+enum TipoOrdine {
+  ORDINE
+  RIASSORTIMENTO
+}
+
+enum StatoConsegna {
+  DA_ORDINARE
+  ORDINATO
+  IN_LAVORAZIONE
+  IN_CONSEGNA
+  CONSEGNATO
+  ANNULLATO
+}
+
+enum TipoLavorazione {
+  STAMPA
+  RICAMO
+  ALTRO
+}
+
+enum StatoLavorazione {
+  DA_FARE
+  IN_CORSO
+  COMPLETATA
+}
+
+model Cliente {
+  id        String   @id @default(cuid())
+  nome      String
+  referente String?
+  telefono  String?
+  email     String?
+  indirizzo String?
+  piva      String?
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ordini Ordine[]
+}
+
+model Ordine {
+  id     String @id @default(cuid())
+  numero String?
+
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  brand Brand
+  tipo  TipoOrdine @default(ORDINE)
+
+  descrizione   String?
+  importoTotale Float
+
+  dataOrdine            DateTime  @default(now())
+  dataConsegnaPrevista  DateTime?
+  dataConsegnaEffettiva DateTime?
+
+  statoConsegna StatoConsegna @default(DA_ORDINARE)
+
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lavorazioni Lavorazione[]
+  pagamenti   Pagamento[]
+}
+
+model Lavorazione {
+  id String @id @default(cuid())
+
+  ordineId String
+  ordine   Ordine @relation(fields: [ordineId], references: [id], onDelete: Cascade)
+
+  tipo        TipoLavorazione
+  descrizione String?
+  fornitore   String?
+  costo       Float
+  stato       StatoLavorazione @default(DA_FARE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Pagamento {
+  id String @id @default(cuid())
+
+  ordineId String
+  ordine   Ordine @relation(fields: [ordineId], references: [id], onDelete: Cascade)
+
+  data    DateTime @default(now())
+  importo Float
+  metodo  String?
+  note    String?
+
+  createdAt DateTime @default(now())
+}
