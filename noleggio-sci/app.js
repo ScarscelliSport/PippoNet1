@@ -321,6 +321,7 @@ rentalForm.addEventListener('submit', (e) => {
   save(STORAGE_KEYS.rentals, rentals);
   rentalForm.reset();
   document.getElementById('rental-qty').value = 1;
+  setDefaultRentalDates();
   renderRentals();
   renderDashboard();
   renderEquipment();
@@ -351,11 +352,15 @@ function handleRentalTableClick(e) {
 rentalTableBody.addEventListener('click', handleRentalTableClick);
 activeRentalsTableBody.addEventListener('click', handleRentalTableClick);
 
-// ---------- Init ----------
-(function init() {
+function setDefaultRentalDates() {
   const today = new Date().toISOString().slice(0, 10);
   document.getElementById('rental-start').value = today;
   document.getElementById('rental-end').value = today;
+}
+
+// ---------- Init ----------
+(function init() {
+  setDefaultRentalDates();
 
   renderEquipment();
   renderCustomers();
