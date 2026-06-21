@@ -41,6 +41,10 @@ export default async function ClienteDetailPage({
         include: { ordine: true },
         orderBy: { createdAt: "desc" },
       },
+      ragazzi: {
+        include: { partecipazioni: { include: { kit: true, ordine: true } } },
+        orderBy: { nome: "asc" },
+      },
     },
   });
 
@@ -149,6 +153,56 @@ export default async function ClienteDetailPage({
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-slate-400">
                     Nessun ordine registrato per questo cliente.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      <Card title={`Ragazzi / Kit (${cliente.ragazzi.length})`}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="text-slate-500 text-left border-b border-slate-100">
+              <tr>
+                <th className="py-2 font-medium">Nome</th>
+                <th className="py-2 font-medium">Contatti</th>
+                <th className="py-2 font-medium">Kit</th>
+                <th className="py-2 font-medium text-right">Totale ordinato</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {cliente.ragazzi.map((ragazzo) => {
+                const totaleOrdinato = ragazzo.partecipazioni.reduce(
+                  (s, p) => s + (p.ordine?.importoTotale ?? 0),
+                  0
+                );
+                return (
+                  <tr key={ragazzo.id}>
+                    <td className="py-2 font-medium">{ragazzo.nome}</td>
+                    <td className="py-2 text-slate-500">
+                      {[ragazzo.email, ragazzo.cellulare].filter(Boolean).join(" · ") || "-"}
+                    </td>
+                    <td className="py-2">
+                      {ragazzo.partecipazioni.map((p) => (
+                        <Link
+                          key={p.id}
+                          href={`/kit/${p.kitId}`}
+                          className="text-slate-900 hover:underline block"
+                        >
+                          {p.kit.nome}
+                        </Link>
+                      ))}
+                    </td>
+                    <td className="py-2 text-right">{formatEuro(totaleOrdinato)}</td>
+                  </tr>
+                );
+              })}
+              {cliente.ragazzi.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="py-6 text-center text-slate-400">
+                    Nessun ragazzo in anagrafica per questa società.
                   </td>
                 </tr>
               )}

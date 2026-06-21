@@ -73,6 +73,7 @@ model Cliente {
   ordini     Ordine[]
   documenti  Documento[]
   kit        Kit[]
+  ragazzi    Ragazzo[]
 }
 
 model Ordine {
@@ -94,6 +95,9 @@ model Ordine {
 
   statoConsegna StatoConsegna @default(DA_ORDINARE)
 
+  ragazzoId String?
+  ragazzo   Ragazzo? @relation(fields: [ragazzoId], references: [id], onDelete: SetNull)
+
   note      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -101,7 +105,7 @@ model Ordine {
   lavorazioni Lavorazione[]
   pagamenti   Pagamento[]
   documenti   Documento[]
-  kit         Kit?
+  kitAtleta   KitAtleta?
 }
 
 model Lavorazione {
@@ -163,14 +167,31 @@ model Kit {
   stato KitStato @default(SCELTA_PRODOTTI)
   note  String?
 
-  ordineId String? @unique
-  ordine   Ordine? @relation(fields: [ordineId], references: [id], onDelete: SetNull)
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   prodotti KitProdotto[]
   atleti   KitAtleta[]
+}
+
+// Anagrafica autonoma del ragazzo/a: appartiene a una società sportiva
+// (cliente) e può partecipare a più Kit/stagioni nel tempo tramite KitAtleta.
+model Ragazzo {
+  id String @id @default(cuid())
+
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  nome      String
+  email     String?
+  cellulare String?
+  note      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  partecipazioni KitAtleta[]
+  ordini         Ordine[]
 }
 
 model KitProdotto {
@@ -188,16 +209,20 @@ model KitProdotto {
   taglie KitTaglia[]
 }
 
+// Partecipazione di un Ragazzo a un Kit: collega l'anagrafica del ragazzo
+// al kit specifico e al suo ordine personale (ogni ragazzo/famiglia paga
+// il proprio ordine, distinto da quello degli altri ragazzi dello stesso kit).
 model KitAtleta {
   id String @id @default(cuid())
 
   kitId String
   kit   Kit @relation(fields: [kitId], references: [id], onDelete: Cascade)
 
-  nome      String
-  email     String?
-  cellulare String?
-  note      String?
+  ragazzoId String
+  ragazzo   Ragazzo @relation(fields: [ragazzoId], references: [id], onDelete: Cascade)
+
+  ordineId String? @unique
+  ordine   Ordine? @relation(fields: [ordineId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
 

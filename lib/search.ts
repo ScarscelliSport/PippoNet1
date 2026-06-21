@@ -68,7 +68,7 @@ export async function searchKit(q: string, limit = 5) {
       OR: [
         { nome: { contains: query } },
         { cliente: { nome: { contains: query } } },
-        { atleti: { some: { nome: { contains: query } } } },
+        { atleti: { some: { ragazzo: { nome: { contains: query } } } } },
       ],
     },
     include: { cliente: true, atleti: true },

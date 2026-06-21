@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Card from "@/components/Card";
+import Badge from "@/components/Badge";
 import ConfirmSubmitButton from "@/components/ConfirmSubmitButton";
 import AutoSubmitSelect from "@/components/AutoSubmitSelect";
 import KitProdottoForm from "@/components/KitProdottoForm";
@@ -16,7 +17,14 @@ import {
   deleteKitAtleta,
   saveTaglie,
 } from "@/app/kit/actions";
-import { BRAND_LABELS, KIT_STATO_COLORS, KIT_STATO_LABELS, formatEuro } from "@/lib/labels";
+import {
+  BRAND_LABELS,
+  KIT_STATO_COLORS,
+  KIT_STATO_LABELS,
+  STATO_CONSEGNA_COLORS,
+  STATO_CONSEGNA_LABELS,
+  formatEuro,
+} from "@/lib/labels";
 import { buttonSecondaryClass, buttonDangerClass, inputClass } from "@/lib/ui";
 
 export const dynamic = "force-dynamic";
@@ -31,11 +39,10 @@ export default async function KitDetailPage({
     where: { id },
     include: {
       cliente: true,
-      ordine: true,
       prodotti: { orderBy: { createdAt: "asc" } },
       atleti: {
         orderBy: { createdAt: "asc" },
-        include: { taglie: true },
+        include: { taglie: true, ragazzo: true, ordine: true },
       },
     },
   });
@@ -95,17 +102,15 @@ export default async function KitDetailPage({
           <p className="text-2xl font-semibold">{formatEuro(importoStimato)}</p>
           <p className="text-xs text-slate-400 mt-1">Somma dei prodotti con taglia assegnata</p>
         </Card>
-        <Card title="Ordine collegato">
-          {kit.ordine ? (
-            <Link
-              href={`/ordini/${kit.ordine.id}`}
-              className="text-slate-900 font-medium hover:underline"
-            >
-              Vai all&apos;ordine {kit.ordine.numero ? `#${kit.ordine.numero}` : ""}
-            </Link>
+        <Card title="Ordini dei ragazzi">
+          {kit.atleti.some((a) => a.ordine) ? (
+            <p className="text-sm text-slate-500">
+              {kit.atleti.filter((a) => a.ordine).length} ordine/i creato/i, uno per ogni ragazzo
+              (vedi tabella &quot;Ragazzi&quot; sotto).
+            </p>
           ) : (
             <p className="text-sm text-slate-400">
-              Verrà creato automaticamente quando il kit passa a &quot;Ordinato&quot;.
+              Verrà creato un ordine per ogni ragazzo quando il kit passa a &quot;Ordinato&quot;.
             </p>
           )}
         </Card>
@@ -161,7 +166,7 @@ export default async function KitDetailPage({
 
       <Card title="Ragazzi">
         <div className="space-y-4">
-          <KitAtletaForm action={createKitAtleta.bind(null, kit.id)} />
+          <KitAtletaForm action={createKitAtleta.bind(null, kit.id)} clienteId={kit.clienteId} />
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-slate-500 text-left border-b border-slate-100">
@@ -169,20 +174,33 @@ export default async function KitDetailPage({
                   <th className="py-2 font-medium">Nome</th>
                   <th className="py-2 font-medium">Email</th>
                   <th className="py-2 font-medium">Cellulare</th>
+                  <th className="py-2 font-medium">Ordine personale</th>
                   <th className="py-2 font-medium"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {kit.atleti.map((atleta) => (
                   <tr key={atleta.id}>
-                    <td className="py-2">{atleta.nome}</td>
-                    <td className="py-2 text-slate-500">{atleta.email || "-"}</td>
-                    <td className="py-2 text-slate-500">{atleta.cellulare || "-"}</td>
+                    <td className="py-2">{atleta.ragazzo.nome}</td>
+                    <td className="py-2 text-slate-500">{atleta.ragazzo.email || "-"}</td>
+                    <td className="py-2 text-slate-500">{atleta.ragazzo.cellulare || "-"}</td>
+                    <td className="py-2">
+                      {atleta.ordine ? (
+                        <Link href={`/ordini/${atleta.ordine.id}`} className="hover:underline">
+                          <Badge
+                            label={`${formatEuro(atleta.ordine.importoTotale)} · ${STATO_CONSEGNA_LABELS[atleta.ordine.statoConsegna]}`}
+                            className={STATO_CONSEGNA_COLORS[atleta.ordine.statoConsegna]}
+                          />
+                        </Link>
+                      ) : (
+                        <span className="text-slate-400">-</span>
+                      )}
+                    </td>
                     <td className="py-2 text-right">
                       <form action={deleteKitAtleta.bind(null, atleta.id, kit.id)}>
                         <ConfirmSubmitButton
                           className="text-red-600 text-xs hover:underline"
-                          confirmMessage="Eliminare questo ragazzo?"
+                          confirmMessage="Eliminare questo ragazzo dal kit? Verrà eliminato anche il suo ordine personale, se presente."
                         >
                           Elimina
                         </ConfirmSubmitButton>
@@ -192,7 +210,7 @@ export default async function KitDetailPage({
                 ))}
                 {kit.atleti.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="py-6 text-center text-slate-400">
+                    <td colSpan={5} className="py-6 text-center text-slate-400">
                       Nessun ragazzo aggiunto.
                     </td>
                   </tr>
@@ -206,7 +224,7 @@ export default async function KitDetailPage({
       <Card title="Taglie">
         <KitTaglieGrid
           action={saveTaglie.bind(null, kit.id)}
-          atleti={kit.atleti}
+          atleti={kit.atleti.map((a) => ({ id: a.id, nome: a.ragazzo.nome }))}
           prodotti={kit.prodotti}
           taglie={taglie}
         />

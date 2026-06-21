@@ -71,40 +71,47 @@ export async function updateStatoKit(id: string, formData: FormData) {
   });
   if (!kit) return;
 
-  let ordineId = kit.ordineId;
+  // Ogni ragazzo del kit paga il proprio ordine: quando il kit passa a
+  // "Ordinato" creiamo un Ordine per ciascun ragazzo che non ne ha ancora
+  // uno, collegato sia alla sua anagrafica (ragazzoId) che alla società
+  // sportiva (clienteId del kit).
+  const ordineIds = kit.atleti.map((a) => a.ordineId).filter((v): v is string => Boolean(v));
 
-  if (stato === "ORDINATO" && !ordineId) {
+  if (stato === "ORDINATO") {
     const prezziProdotti = new Map(kit.prodotti.map((p) => [p.id, p.prezzoUnitario]));
-    let importoTotale = 0;
     for (const atleta of kit.atleti) {
-      for (const taglia of atleta.taglie) {
-        importoTotale += prezziProdotti.get(taglia.kitProdottoId) ?? 0;
-      }
+      if (atleta.ordineId) continue;
+      const importoTotale = atleta.taglie.reduce(
+        (s, t) => s + (prezziProdotti.get(t.kitProdottoId) ?? 0),
+        0
+      );
+      const ordine = await prisma.ordine.create({
+        data: {
+          clienteId: kit.clienteId,
+          ragazzoId: atleta.ragazzoId,
+          brand: kit.brand,
+          tipo: "ORDINE",
+          descrizione: `Kit: ${kit.nome}`,
+          importoTotale,
+          statoConsegna: "ORDINATO",
+        },
+      });
+      await prisma.kitAtleta.update({ where: { id: atleta.id }, data: { ordineId: ordine.id } });
+      ordineIds.push(ordine.id);
     }
-    const ordine = await prisma.ordine.create({
-      data: {
-        clienteId: kit.clienteId,
-        brand: kit.brand,
-        tipo: "ORDINE",
-        descrizione: `Kit: ${kit.nome}`,
-        importoTotale,
-        statoConsegna: "ORDINATO",
-      },
-    });
-    ordineId = ordine.id;
   }
 
   const statoConsegnaSync = STATO_ORDINE_SYNC[stato];
-  if (ordineId && statoConsegnaSync) {
-    await prisma.ordine.update({
-      where: { id: ordineId },
+  if (statoConsegnaSync && ordineIds.length > 0) {
+    await prisma.ordine.updateMany({
+      where: { id: { in: ordineIds } },
       data: { statoConsegna: statoConsegnaSync },
     });
   }
 
   await prisma.kit.update({
     where: { id },
-    data: { stato, ordineId },
+    data: { stato },
   });
 
   revalidatePath("/kit");
@@ -112,7 +119,6 @@ export async function updateStatoKit(id: string, formData: FormData) {
   revalidatePath("/ordini");
   revalidatePath(`/clienti/${kit.clienteId}`);
   revalidatePath("/");
-  if (ordineId) revalidatePath(`/ordini/${ordineId}`);
 }
 
 const prodottoSchema = z.object({
@@ -144,34 +150,52 @@ export async function deleteKitProdotto(id: string, kitId: string) {
 }
 
 const atletaSchema = z.object({
+  ragazzoId: z.string().trim().optional(),
   nome: z.string().trim().min(1, "Il nome è obbligatorio"),
   email: z.string().trim().optional(),
   cellulare: z.string().trim().optional(),
   note: z.string().trim().optional(),
 });
 
+// Il ragazzo è un'anagrafica autonoma legata alla società sportiva del kit,
+// così può essere ritrovato e riusato in altri kit/stagioni: se non viene
+// selezionato un ragazzo già esistente (autocomplete), ne creiamo uno nuovo
+// agganciato al cliente del kit.
 export async function createKitAtleta(kitId: string, formData: FormData) {
+  const kit = await prisma.kit.findUnique({ where: { id: kitId } });
+  if (!kit) return;
+
   const parsed = atletaSchema.parse({
+    ragazzoId: String(formData.get("ragazzoId") ?? ""),
     nome: String(formData.get("nome") ?? ""),
     email: String(formData.get("email") ?? ""),
     cellulare: String(formData.get("cellulare") ?? ""),
     note: String(formData.get("note") ?? ""),
   });
-  await prisma.kitAtleta.create({
-    data: {
-      kitId,
-      nome: parsed.nome,
-      email: parsed.email || null,
-      cellulare: parsed.cellulare || null,
-      note: parsed.note || null,
-    },
-  });
+
+  const datiRagazzo = {
+    nome: parsed.nome,
+    email: parsed.email || null,
+    cellulare: parsed.cellulare || null,
+    note: parsed.note || null,
+  };
+
+  const ragazzo = parsed.ragazzoId
+    ? await prisma.ragazzo.update({ where: { id: parsed.ragazzoId }, data: datiRagazzo })
+    : await prisma.ragazzo.create({ data: { ...datiRagazzo, clienteId: kit.clienteId } });
+
+  await prisma.kitAtleta.create({ data: { kitId, ragazzoId: ragazzo.id } });
   revalidatePath(`/kit/${kitId}`);
+  revalidatePath(`/clienti/${kit.clienteId}`);
 }
 
 export async function deleteKitAtleta(id: string, kitId: string) {
-  await prisma.kitAtleta.delete({ where: { id } });
+  const atleta = await prisma.kitAtleta.delete({ where: { id } });
+  if (atleta.ordineId) {
+    await prisma.ordine.delete({ where: { id: atleta.ordineId } }).catch(() => {});
+  }
   revalidatePath(`/kit/${kitId}`);
+  revalidatePath("/ordini");
 }
 
 export async function saveTaglie(kitId: string, formData: FormData) {

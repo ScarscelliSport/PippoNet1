@@ -46,6 +46,8 @@ export default async function OrdineDetailPage({
     where: { id },
     include: {
       cliente: true,
+      ragazzo: true,
+      kitAtleta: { include: { kit: true } },
       pagamenti: { orderBy: { data: "desc" } },
       lavorazioni: { orderBy: { createdAt: "desc" } },
       documenti: { orderBy: { createdAt: "desc" } },
@@ -73,6 +75,20 @@ export default async function OrdineDetailPage({
           <Link href={`/clienti/${ordine.clienteId}`} className="text-slate-500 hover:underline">
             {ordine.cliente.nome}
           </Link>
+          {ordine.ragazzo && (
+            <p className="text-slate-500 text-sm">
+              Ragazzo: {ordine.ragazzo.nome}
+              {ordine.kitAtleta && (
+                <>
+                  {" "}
+                  ·{" "}
+                  <Link href={`/kit/${ordine.kitAtleta.kitId}`} className="hover:underline">
+                    {ordine.kitAtleta.kit.nome}
+                  </Link>
+                </>
+              )}
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           <Link href={`/ordini/${ordine.id}/edit`} className={buttonSecondaryClass}>
