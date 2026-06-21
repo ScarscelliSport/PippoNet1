@@ -36,6 +36,88 @@ function fmtMoney(n) {
   return '€' + Number(n).toFixed(2);
 }
 
+// ---------- Export to Excel (CSV) ----------
+function csvEscape(value) {
+  const s = String(value ?? '');
+  return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+function rowsToCsv(rows) {
+  return rows.map((row) => row.map(csvEscape).join(';')).join('\r\n');
+}
+
+function downloadCsv(filename, rows) {
+  const csv = '﻿' + rowsToCsv(rows);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function equipmentRows() {
+  return [
+    ['Categoria', 'Nome', 'Taglia', 'Quantità totale', 'Disponibili'],
+    ...equipment.map((item) => [item.category, item.name, item.size, item.totalQty, availableQty(item)]),
+  ];
+}
+
+function customerRows() {
+  return [
+    ['Nome', 'Telefono', 'Documento'],
+    ...customers.map((c) => [c.name, c.phone, c.doc]),
+  ];
+}
+
+function rentalRows() {
+  return [
+    ['Cliente', 'Attrezzatura', 'Quantità', 'Dal', 'Al', 'Prezzo', 'Stato'],
+    ...rentals.map((r) => {
+      const cust = customers.find((c) => c.id === r.customerId);
+      const item = equipment.find((eq) => eq.id === r.equipmentId);
+      return [
+        cust ? cust.name : '—',
+        item ? `${item.category} - ${item.name}` : '—',
+        r.qty,
+        fmtDate(r.start),
+        fmtDate(r.end),
+        r.price,
+        r.status,
+      ];
+    }),
+  ];
+}
+
+document.getElementById('export-equipment').addEventListener('click', () => {
+  downloadCsv('attrezzatura.csv', equipmentRows());
+});
+
+document.getElementById('export-customers').addEventListener('click', () => {
+  downloadCsv('clienti.csv', customerRows());
+});
+
+document.getElementById('export-rentals').addEventListener('click', () => {
+  downloadCsv('noleggi.csv', rentalRows());
+});
+
+document.getElementById('export-all').addEventListener('click', () => {
+  const rows = [
+    ['ATTREZZATURA'],
+    ...equipmentRows(),
+    [],
+    ['CLIENTI'],
+    ...customerRows(),
+    [],
+    ['NOLEGGI'],
+    ...rentalRows(),
+  ];
+  downloadCsv('pipponet-rental.csv', rows);
+});
+
 // ---------- Tabs ----------
 document.querySelectorAll('.tab-btn').forEach((btn) => {
   btn.addEventListener('click', () => {

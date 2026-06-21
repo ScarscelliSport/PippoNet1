@@ -28,6 +28,10 @@
 
   <!-- DASHBOARD -->
   <section id="dashboard" class="tab-panel active">
+    <div class="section-header">
+      <h2 class="section-title" style="margin-top:0">🏔️ Panoramica</h2>
+      <button type="button" id="export-all" class="btn btn-excel">📊 Esporta tutto in Excel</button>
+    </div>
     <div class="stats-grid">
       <div class="stat-card stat-snow">
         <span class="stat-icon">⛷️</span>
@@ -72,7 +76,10 @@
 
   <!-- ATTREZZATURA -->
   <section id="attrezzatura" class="tab-panel">
-    <h2 class="section-title">🎿 Attrezzatura</h2>
+    <div class="section-header">
+      <h2 class="section-title">🎿 Attrezzatura</h2>
+      <button type="button" id="export-equipment" class="btn btn-excel">📊 Esporta in Excel</button>
+    </div>
     <form id="equipment-form" class="card-form">
       <input type="hidden" id="equipment-id">
       <select id="equipment-category" required>
@@ -102,7 +109,10 @@
 
   <!-- CLIENTI -->
   <section id="clienti" class="tab-panel">
-    <h2 class="section-title">👥 Clienti</h2>
+    <div class="section-header">
+      <h2 class="section-title">👥 Clienti</h2>
+      <button type="button" id="export-customers" class="btn btn-excel">📊 Esporta in Excel</button>
+    </div>
     <form id="customer-form" class="card-form">
       <input type="hidden" id="customer-id">
       <input type="text" id="customer-name" placeholder="Nome e cognome" required>
@@ -139,7 +149,10 @@
       <button type="submit" class="btn btn-primary">Crea noleggio</button>
     </form>
 
-    <h2 class="section-title">📋 Tutti i noleggi</h2>
+    <div class="section-header">
+      <h2 class="section-title">📋 Tutti i noleggi</h2>
+      <button type="button" id="export-rentals" class="btn btn-excel">📊 Esporta in Excel</button>
+    </div>
     <div class="table-wrap">
       <table id="rental-table">
         <thead>
