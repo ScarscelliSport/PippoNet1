@@ -39,6 +39,17 @@ function parseCliente(formData: FormData) {
 
 export async function createCliente(formData: FormData) {
   const data = parseCliente(formData);
+
+  // Se il form proviene dall'autocompletamento ed è stato selezionato un
+  // cliente già esistente, aggiorniamo quel record invece di duplicarlo.
+  const existingId = String(formData.get("clienteId") ?? "").trim();
+  if (existingId) {
+    await prisma.cliente.update({ where: { id: existingId }, data });
+    revalidatePath("/clienti");
+    revalidatePath(`/clienti/${existingId}`);
+    redirect(`/clienti/${existingId}`);
+  }
+
   const cliente = await prisma.cliente.create({ data });
   revalidatePath("/clienti");
   redirect(`/clienti/${cliente.id}`);

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SearchBox from "@/components/SearchBox";
 
 const links = [
   { href: "/", label: "Dashboard" },
@@ -14,6 +15,7 @@ export default function Nav() {
         <Link href="/" className="font-semibold text-lg tracking-tight">
           Gestionale Forniture <span className="text-slate-400">Errea / Solo</span>
         </Link>
+        <SearchBox />
         <nav className="flex gap-1 text-sm items-center">
           {links.map((link) => (
             <Link
