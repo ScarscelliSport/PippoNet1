@@ -1,5 +1,6 @@
 import {
   Brand,
+  KitStato,
   StatoConsegna,
   StatoLavorazione,
   TipoDocumento,
@@ -59,6 +60,36 @@ export const TIPO_DOCUMENTO_LABELS: Record<TipoDocumento, string> = {
   CONTRATTO: "Contratto",
   ALTRO: "Altro",
 };
+
+export const KIT_STATO_LABELS: Record<KitStato, string> = {
+  SCELTA_PRODOTTI: "Scelta prodotti",
+  PROVE: "Prove",
+  ORDINATO: "Ordinato",
+  IN_LAVORAZIONE: "In lavorazione",
+  DA_CONTATTARE: "Da contattare",
+  CONTATTATO: "Contattato",
+  CHIUSO: "Chiuso",
+};
+
+export const KIT_STATO_COLORS: Record<KitStato, string> = {
+  SCELTA_PRODOTTI: "bg-gray-100 text-gray-700",
+  PROVE: "bg-blue-100 text-blue-700",
+  ORDINATO: "bg-purple-100 text-purple-700",
+  IN_LAVORAZIONE: "bg-amber-100 text-amber-700",
+  DA_CONTATTARE: "bg-orange-100 text-orange-700",
+  CONTATTATO: "bg-teal-100 text-teal-700",
+  CHIUSO: "bg-green-100 text-green-700",
+};
+
+export const KIT_STATO_ORDER: KitStato[] = [
+  "SCELTA_PRODOTTI",
+  "PROVE",
+  "ORDINATO",
+  "IN_LAVORAZIONE",
+  "DA_CONTATTARE",
+  "CONTATTATO",
+  "CHIUSO",
+];
 
 export type StatoPagamento = "NON_PAGATO" | "PARZIALE" | "PAGATO";
 

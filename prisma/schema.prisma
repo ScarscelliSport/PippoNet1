@@ -48,6 +48,16 @@ enum TipoDocumento {
   ALTRO
 }
 
+enum KitStato {
+  SCELTA_PRODOTTI
+  PROVE
+  ORDINATO
+  IN_LAVORAZIONE
+  DA_CONTATTARE
+  CONTATTATO
+  CHIUSO
+}
+
 model Cliente {
   id        String   @id @default(cuid())
   nome      String
@@ -62,6 +72,7 @@ model Cliente {
 
   ordini     Ordine[]
   documenti  Documento[]
+  kit        Kit[]
 }
 
 model Ordine {
@@ -90,6 +101,7 @@ model Ordine {
   lavorazioni Lavorazione[]
   pagamenti   Pagamento[]
   documenti   Documento[]
+  kit         Kit?
 }
 
 model Lavorazione {
@@ -138,4 +150,73 @@ model Documento {
   size     Int
 
   createdAt DateTime @default(now())
+}
+
+model Kit {
+  id String @id @default(cuid())
+
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  nome  String
+  brand Brand
+  stato KitStato @default(SCELTA_PRODOTTI)
+  note  String?
+
+  ordineId String? @unique
+  ordine   Ordine? @relation(fields: [ordineId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  prodotti KitProdotto[]
+  atleti   KitAtleta[]
+}
+
+model KitProdotto {
+  id String @id @default(cuid())
+
+  kitId String
+  kit   Kit @relation(fields: [kitId], references: [id], onDelete: Cascade)
+
+  nome           String
+  prezzoUnitario Float
+  note           String?
+
+  createdAt DateTime @default(now())
+
+  taglie KitTaglia[]
+}
+
+model KitAtleta {
+  id String @id @default(cuid())
+
+  kitId String
+  kit   Kit @relation(fields: [kitId], references: [id], onDelete: Cascade)
+
+  nome      String
+  email     String?
+  cellulare String?
+  note      String?
+
+  createdAt DateTime @default(now())
+
+  taglie KitTaglia[]
+}
+
+model KitTaglia {
+  id String @id @default(cuid())
+
+  kitAtletaId String
+  kitAtleta   KitAtleta @relation(fields: [kitAtletaId], references: [id], onDelete: Cascade)
+
+  kitProdottoId String
+  kitProdotto   KitProdotto @relation(fields: [kitProdottoId], references: [id], onDelete: Cascade)
+
+  taglia String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([kitAtletaId, kitProdottoId])
 }
