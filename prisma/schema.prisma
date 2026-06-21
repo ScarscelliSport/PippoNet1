@@ -41,6 +41,13 @@ enum StatoLavorazione {
   COMPLETATA
 }
 
+enum TipoDocumento {
+  DDT
+  FATTURA
+  CONTRATTO
+  ALTRO
+}
+
 model Cliente {
   id        String   @id @default(cuid())
   nome      String
@@ -53,7 +60,8 @@ model Cliente {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  ordini Ordine[]
+  ordini     Ordine[]
+  documenti  Documento[]
 }
 
 model Ordine {
@@ -81,6 +89,7 @@ model Ordine {
 
   lavorazioni Lavorazione[]
   pagamenti   Pagamento[]
+  documenti   Documento[]
 }
 
 model Lavorazione {
@@ -109,6 +118,24 @@ model Pagamento {
   importo Float
   metodo  String?
   note    String?
+
+  createdAt DateTime @default(now())
+}
+
+model Documento {
+  id String @id @default(cuid())
+
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  ordineId String?
+  ordine   Ordine? @relation(fields: [ordineId], references: [id], onDelete: SetNull)
+
+  tipo     TipoDocumento @default(DDT)
+  nome     String
+  filePath String
+  mimeType String
+  size     Int
 
   createdAt DateTime @default(now())
 }

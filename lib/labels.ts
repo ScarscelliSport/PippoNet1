@@ -2,6 +2,7 @@ import {
   Brand,
   StatoConsegna,
   StatoLavorazione,
+  TipoDocumento,
   TipoLavorazione,
   TipoOrdine,
 } from "@/app/generated/prisma/client";
@@ -52,6 +53,13 @@ export const STATO_LAVORAZIONE_COLORS: Record<StatoLavorazione, string> = {
   COMPLETATA: "bg-green-100 text-green-700",
 };
 
+export const TIPO_DOCUMENTO_LABELS: Record<TipoDocumento, string> = {
+  DDT: "DDT",
+  FATTURA: "Fattura",
+  CONTRATTO: "Contratto",
+  ALTRO: "Altro",
+};
+
 export type StatoPagamento = "NON_PAGATO" | "PARZIALE" | "PAGATO";
 
 export const STATO_PAGAMENTO_LABELS: Record<StatoPagamento, string> = {
@@ -96,4 +104,10 @@ export function formatDataInput(value: Date | string | null | undefined): string
   if (!value) return "";
   const d = typeof value === "string" ? new Date(value) : value;
   return d.toISOString().slice(0, 10);
+}
+
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

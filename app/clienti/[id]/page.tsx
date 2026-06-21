@@ -4,14 +4,18 @@ import { prisma } from "@/lib/prisma";
 import Card from "@/components/Card";
 import Badge from "@/components/Badge";
 import ConfirmSubmitButton from "@/components/ConfirmSubmitButton";
+import DocumentoForm from "@/components/DocumentoForm";
 import { deleteCliente } from "@/app/clienti/actions";
+import { uploadDocumento, deleteDocumento } from "@/app/documenti/actions";
 import {
   BRAND_LABELS,
   STATO_CONSEGNA_COLORS,
   STATO_CONSEGNA_LABELS,
   STATO_PAGAMENTO_COLORS,
   STATO_PAGAMENTO_LABELS,
+  TIPO_DOCUMENTO_LABELS,
   TIPO_ORDINE_LABELS,
+  formatBytes,
   formatData,
   formatEuro,
   statoPagamentoOrdine,
@@ -32,6 +36,10 @@ export default async function ClienteDetailPage({
       ordini: {
         include: { pagamenti: true },
         orderBy: { dataOrdine: "desc" },
+      },
+      documenti: {
+        include: { ordine: true },
+        orderBy: { createdAt: "desc" },
       },
     },
   });
@@ -146,6 +154,76 @@ export default async function ClienteDetailPage({
               )}
             </tbody>
           </table>
+        </div>
+      </Card>
+
+      <Card title="Documenti">
+        <div className="space-y-4">
+          <DocumentoForm action={uploadDocumento.bind(null, cliente.id, null)} />
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-slate-500 text-left border-b border-slate-100">
+                <tr>
+                  <th className="py-2 font-medium">Tipo</th>
+                  <th className="py-2 font-medium">Nome</th>
+                  <th className="py-2 font-medium">Ordine</th>
+                  <th className="py-2 font-medium">Dimensione</th>
+                  <th className="py-2 font-medium">Caricato il</th>
+                  <th className="py-2 font-medium"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {cliente.documenti.map((documento) => (
+                  <tr key={documento.id}>
+                    <td className="py-2">{TIPO_DOCUMENTO_LABELS[documento.tipo]}</td>
+                    <td className="py-2">
+                      <a
+                        href={`/api/documenti/${documento.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-slate-900 hover:underline"
+                      >
+                        {documento.nome}
+                      </a>
+                    </td>
+                    <td className="py-2 text-slate-500">
+                      {documento.ordine
+                        ? documento.ordine.numero
+                          ? `#${documento.ordine.numero}`
+                          : "Ordine collegato"
+                        : "-"}
+                    </td>
+                    <td className="py-2 text-slate-500">{formatBytes(documento.size)}</td>
+                    <td className="py-2 text-slate-500">{formatData(documento.createdAt)}</td>
+                    <td className="py-2 text-right">
+                      <form
+                        action={deleteDocumento.bind(
+                          null,
+                          documento.id,
+                          cliente.id,
+                          documento.ordineId
+                        )}
+                      >
+                        <ConfirmSubmitButton
+                          className="text-red-600 text-xs hover:underline"
+                          confirmMessage="Eliminare questo documento?"
+                        >
+                          Elimina
+                        </ConfirmSubmitButton>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+                {cliente.documenti.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-6 text-center text-slate-400">
+                      Nessun documento caricato.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </Card>
     </div>

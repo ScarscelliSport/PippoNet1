@@ -47,3 +47,6 @@ next-env.d.ts
 /prisma/*.db
 /prisma/*.db-journal
 
+# uploaded client documents (DDT, fatture, ecc.)
+/uploads
+

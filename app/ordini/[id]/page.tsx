@@ -7,6 +7,7 @@ import ConfirmSubmitButton from "@/components/ConfirmSubmitButton";
 import AutoSubmitSelect from "@/components/AutoSubmitSelect";
 import PagamentoForm from "@/components/PagamentoForm";
 import LavorazioneForm from "@/components/LavorazioneForm";
+import DocumentoForm from "@/components/DocumentoForm";
 import {
   deleteOrdine,
   updateStatoConsegnaOrdine,
@@ -16,6 +17,7 @@ import {
   updateStatoLavorazione,
   deleteLavorazione,
 } from "@/app/ordini/actions";
+import { uploadDocumento, deleteDocumento } from "@/app/documenti/actions";
 import {
   BRAND_LABELS,
   STATO_CONSEGNA_COLORS,
@@ -24,8 +26,10 @@ import {
   STATO_LAVORAZIONE_LABELS,
   STATO_PAGAMENTO_COLORS,
   STATO_PAGAMENTO_LABELS,
+  TIPO_DOCUMENTO_LABELS,
   TIPO_LAVORAZIONE_LABELS,
   TIPO_ORDINE_LABELS,
+  formatBytes,
   formatData,
   formatEuro,
   statoPagamentoOrdine,
@@ -44,6 +48,7 @@ export default async function OrdineDetailPage({
       cliente: true,
       pagamenti: { orderBy: { data: "desc" } },
       lavorazioni: { orderBy: { createdAt: "desc" } },
+      documenti: { orderBy: { createdAt: "desc" } },
     },
   });
 
@@ -243,6 +248,68 @@ export default async function OrdineDetailPage({
               </span>
             </p>
           )}
+        </div>
+      </Card>
+
+      <Card title="Documenti: DDT, fatture e altri allegati">
+        <div className="space-y-4">
+          <DocumentoForm action={uploadDocumento.bind(null, ordine.clienteId, ordine.id)} />
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="text-slate-500 text-left border-b border-slate-100">
+                <tr>
+                  <th className="py-2 font-medium">Tipo</th>
+                  <th className="py-2 font-medium">Nome</th>
+                  <th className="py-2 font-medium">Dimensione</th>
+                  <th className="py-2 font-medium">Caricato il</th>
+                  <th className="py-2 font-medium"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {ordine.documenti.map((documento) => (
+                  <tr key={documento.id}>
+                    <td className="py-2">{TIPO_DOCUMENTO_LABELS[documento.tipo]}</td>
+                    <td className="py-2">
+                      <a
+                        href={`/api/documenti/${documento.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-slate-900 hover:underline"
+                      >
+                        {documento.nome}
+                      </a>
+                    </td>
+                    <td className="py-2 text-slate-500">{formatBytes(documento.size)}</td>
+                    <td className="py-2 text-slate-500">{formatData(documento.createdAt)}</td>
+                    <td className="py-2 text-right">
+                      <form
+                        action={deleteDocumento.bind(
+                          null,
+                          documento.id,
+                          ordine.clienteId,
+                          ordine.id
+                        )}
+                      >
+                        <ConfirmSubmitButton
+                          className="text-red-600 text-xs hover:underline"
+                          confirmMessage="Eliminare questo documento?"
+                        >
+                          Elimina
+                        </ConfirmSubmitButton>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+                {ordine.documenti.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-6 text-center text-slate-400">
+                      Nessun documento caricato per questo ordine.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </Card>
     </div>

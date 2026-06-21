@@ -14,7 +14,7 @@ export default function Nav() {
         <Link href="/" className="font-semibold text-lg tracking-tight">
           Gestionale Forniture <span className="text-slate-400">Errea / Solo</span>
         </Link>
-        <nav className="flex gap-1 text-sm">
+        <nav className="flex gap-1 text-sm items-center">
           {links.map((link) => (
             <Link
               key={link.href}
@@ -24,6 +24,12 @@ export default function Nav() {
               {link.label}
             </Link>
           ))}
+          <a
+            href="/api/export"
+            className="px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 transition font-medium"
+          >
+            Esporta Excel
+          </a>
         </nav>
       </div>
     </header>
