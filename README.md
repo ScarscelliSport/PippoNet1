@@ -13,6 +13,15 @@ npm run dev
 
 Apri [http://localhost:3000](http://localhost:3000).
 
+## Icona sul Desktop (Windows)
+
+Dopo aver fatto il setup una volta (passi sopra), per avere un'icona sul Desktop che avvia il programma:
+
+1. Fai doppio clic su `crea-icona-desktop.bat` (una sola volta).
+2. Comparirà sul Desktop l'icona **"Gestionale Forniture"**.
+
+Da quel momento, doppio clic su quell'icona avvia il server e apre il browser su `http://localhost:3000` automaticamente (usa `avvia-gestionale.bat`).
+
 ## Stack
 
 - Next.js (App Router) + TypeScript + Tailwind CSS
