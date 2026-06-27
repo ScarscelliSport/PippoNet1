@@ -22,6 +22,12 @@ let equipment = load(STORAGE_KEYS.equipment);
 let customers = load(STORAGE_KEYS.customers);
 let rentals = load(STORAGE_KEYS.rentals);
 
+// migrate rentals created before multi-equipment support (single equipmentId/qty -> items[])
+if (rentals.some((r) => !r.items)) {
+  rentals = rentals.map((r) => (r.items ? r : { ...r, items: [{ equipmentId: r.equipmentId, qty: r.qty }] }));
+  save(STORAGE_KEYS.rentals, rentals);
+}
+
 function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
@@ -75,14 +81,12 @@ function customerRows() {
 
 function rentalRows() {
   return [
-    ['Cliente', 'Attrezzatura', 'Quantità', 'Dal', 'Al', 'Prezzo', 'Stato'],
+    ['Cliente', 'Attrezzatura', 'Dal', 'Al', 'Prezzo', 'Stato'],
     ...rentals.map((r) => {
       const cust = customers.find((c) => c.id === r.customerId);
-      const item = equipment.find((eq) => eq.id === r.equipmentId);
       return [
         cust ? cust.name : '—',
-        item ? `${item.category} - ${item.name}` : '—',
-        r.qty,
+        rentalItemsLabel(r.items),
         fmtDate(r.start),
         fmtDate(r.end),
         r.price,
@@ -132,8 +136,10 @@ document.querySelectorAll('.tab-btn').forEach((btn) => {
 // ---------- Availability ----------
 function activeQtyRented(equipmentId, excludeRentalId = null) {
   return rentals
-    .filter((r) => r.equipmentId === equipmentId && r.status === 'attivo' && r.id !== excludeRentalId)
-    .reduce((sum, r) => sum + Number(r.qty), 0);
+    .filter((r) => r.status === 'attivo' && r.id !== excludeRentalId)
+    .reduce((sum, r) => sum + r.items
+      .filter((it) => it.equipmentId === equipmentId)
+      .reduce((s, it) => s + Number(it.qty), 0), 0);
 }
 
 function availableQty(item, excludeRentalId = null) {
@@ -164,7 +170,7 @@ function renderEquipment() {
       </td>`;
     equipmentTableBody.appendChild(tr);
   });
-  refreshEquipmentSelect();
+  refreshRentalItemSelects();
 }
 
 equipmentForm.addEventListener('submit', (e) => {
@@ -306,20 +312,62 @@ function refreshCustomerSelect() {
   sel.value = current;
 }
 
-function refreshEquipmentSelect() {
-  const sel = document.getElementById('rental-equipment');
-  const current = sel.value;
-  sel.innerHTML = '<option value="">Attrezzatura</option>' +
+function equipmentOptionsHtml(selectedId) {
+  return '<option value="">Attrezzatura</option>' +
     equipment.map((item) => {
       const avail = availableQty(item);
-      return `<option value="${item.id}" ${avail <= 0 ? 'disabled' : ''}>${item.category} - ${item.name}${item.size ? ' (' + item.size + ')' : ''} — disp: ${avail}</option>`;
+      const isSelected = item.id === selectedId;
+      return `<option value="${item.id}" ${avail <= 0 && !isSelected ? 'disabled' : ''} ${isSelected ? 'selected' : ''}>${item.category} - ${item.name}${item.size ? ' (' + item.size + ')' : ''} — disp: ${avail}</option>`;
     }).join('');
-  sel.value = current;
+}
+
+function refreshRentalItemSelects() {
+  document.querySelectorAll('.rental-item-equipment').forEach((sel) => {
+    const current = sel.value;
+    sel.innerHTML = equipmentOptionsHtml(current);
+    sel.value = current;
+  });
+}
+
+function addRentalItemRow() {
+  const row = document.createElement('div');
+  row.className = 'rental-item-row';
+  row.innerHTML = `
+    <select class="rental-item-equipment" required>${equipmentOptionsHtml()}</select>
+    <input type="number" class="rental-item-qty" min="1" value="1" required>
+    <button type="button" class="btn btn-danger btn-sm rental-item-remove">✕</button>
+  `;
+  document.getElementById('rental-items').appendChild(row);
+}
+
+document.getElementById('rental-add-item').addEventListener('click', addRentalItemRow);
+
+document.getElementById('rental-items').addEventListener('click', (e) => {
+  if (e.target.classList.contains('rental-item-remove')) {
+    const rows = document.querySelectorAll('.rental-item-row');
+    if (rows.length > 1) e.target.closest('.rental-item-row').remove();
+  }
+});
+
+function collectRentalItems() {
+  const items = [];
+  document.querySelectorAll('.rental-item-row').forEach((row) => {
+    const equipmentId = row.querySelector('.rental-item-equipment').value;
+    const qty = Number(row.querySelector('.rental-item-qty').value);
+    if (equipmentId && qty > 0) items.push({ equipmentId, qty });
+  });
+  return items;
+}
+
+function rentalItemsLabel(items) {
+  return items.map((it) => {
+    const item = equipment.find((eq) => eq.id === it.equipmentId);
+    return `${item ? item.category + ' - ' + item.name : '—'} (x${it.qty})`;
+  }).join(', ');
 }
 
 function rentalRowHtml(r, { showStatusBadge }) {
   const cust = customers.find((c) => c.id === r.customerId);
-  const item = equipment.find((eq) => eq.id === r.equipmentId);
   const badge = r.status === 'attivo'
     ? '<span class="badge badge-active">Attivo</span>'
     : '<span class="badge badge-returned">Restituito</span>';
@@ -330,8 +378,7 @@ function rentalRowHtml(r, { showStatusBadge }) {
   return `
     <tr>
       <td>${cust ? cust.name : '—'}</td>
-      <td>${item ? item.category + ' - ' + item.name : '—'}</td>
-      <td>${r.qty}</td>
+      <td>${rentalItemsLabel(r.items)}</td>
       <td>${fmtDate(r.start)}</td>
       <td>${fmtDate(r.end)}</td>
       <td>${fmtMoney(r.price)}</td>
@@ -343,7 +390,7 @@ function rentalRowHtml(r, { showStatusBadge }) {
 function renderRentals() {
   rentalTableBody.innerHTML = '';
   if (rentals.length === 0) {
-    rentalTableBody.innerHTML = '<tr class="empty-row"><td colspan="8">Nessun noleggio ancora. 🏂</td></tr>';
+    rentalTableBody.innerHTML = '<tr class="empty-row"><td colspan="7">Nessun noleggio ancora. 🏂</td></tr>';
   } else {
     rentals
       .slice()
@@ -352,7 +399,7 @@ function renderRentals() {
         rentalTableBody.insertAdjacentHTML('beforeend', rentalRowHtml(r, { showStatusBadge: true }));
       });
   }
-  refreshEquipmentSelect();
+  refreshRentalItemSelects();
 }
 
 function renderDashboard() {
@@ -364,7 +411,7 @@ function renderDashboard() {
 
   activeRentalsTableBody.innerHTML = '';
   if (activeRentals.length === 0) {
-    activeRentalsTableBody.innerHTML = '<tr class="empty-row"><td colspan="7">Nessun noleggio attivo al momento. ❄️</td></tr>';
+    activeRentalsTableBody.innerHTML = '<tr class="empty-row"><td colspan="6">Nessun noleggio attivo al momento. ❄️</td></tr>';
   } else {
     activeRentals.forEach((r) => {
       activeRentalsTableBody.insertAdjacentHTML('beforeend', rentalRowHtml(r, { showStatusBadge: false }));
@@ -374,26 +421,35 @@ function renderDashboard() {
 
 rentalForm.addEventListener('submit', (e) => {
   e.preventDefault();
-  const equipmentId = document.getElementById('rental-equipment').value;
-  const qty = Number(document.getElementById('rental-qty').value);
-  const item = equipment.find((x) => x.id === equipmentId);
+  const items = collectRentalItems();
   const start = document.getElementById('rental-start').value;
   const end = document.getElementById('rental-end').value;
 
+  if (items.length === 0) {
+    alert('Aggiungi almeno un articolo di attrezzatura al noleggio.');
+    return;
+  }
   if (end < start) {
     alert('La data di fine non può essere prima della data di inizio.');
     return;
   }
-  if (!item || qty > availableQty(item)) {
-    alert('Quantità non disponibile per questa attrezzatura.');
-    return;
+
+  const requestedQty = {};
+  items.forEach((it) => {
+    requestedQty[it.equipmentId] = (requestedQty[it.equipmentId] || 0) + it.qty;
+  });
+  for (const [equipmentId, qty] of Object.entries(requestedQty)) {
+    const item = equipment.find((x) => x.id === equipmentId);
+    if (!item || qty > availableQty(item)) {
+      alert(`Quantità non disponibile per: ${item ? item.name : equipmentId}`);
+      return;
+    }
   }
 
   const data = {
     id: uid(),
     customerId: document.getElementById('rental-customer').value,
-    equipmentId,
-    qty,
+    items,
     start,
     end,
     price: Number(document.getElementById('rental-price').value),
@@ -402,7 +458,8 @@ rentalForm.addEventListener('submit', (e) => {
   rentals.push(data);
   save(STORAGE_KEYS.rentals, rentals);
   rentalForm.reset();
-  document.getElementById('rental-qty').value = 1;
+  document.getElementById('rental-items').innerHTML = '';
+  addRentalItemRow();
   setDefaultRentalDates();
   renderRentals();
   renderDashboard();
@@ -443,6 +500,7 @@ function setDefaultRentalDates() {
 // ---------- Init ----------
 (function init() {
   setDefaultRentalDates();
+  addRentalItemRow();
 
   renderEquipment();
   renderCustomers();
